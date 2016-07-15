@@ -1,0 +1,55 @@
+#include <dom>
+#include <json>
+#include <storage>
+
+PLUS = JS('PLUS')
+
+def createElement()
+    = PLUS.createElement.apply(null, args);
+
+tracks = deJSONify(localStorage.getItem('tracks') || '[]')
+
+def menu(m) {
+    body.setContent('')
+    if m == 'main' {
+        body.appendContent(
+            createElement(
+                'div',
+                JS('({id:"gui",style:"position:absolute;top:5%;left:5%;width:90%;height:90%;border:1px solid black;"})')
+            )
+        )
+        
+        #gui.appendContent('<div style="background-color:#88f;text-align:center;font-size:300%">'+querySelector('title').innerHTML+'</div>')
+        #gui.appendContent(
+            createElement(
+                'div',
+                JS('({id:"tracks",style:"position:absolute;bottom:5%;left:10%;width:80%;height:70%;border:1px solid black;"})')
+            )
+        )
+        #tracks.appendContent(
+            createElement(
+                'div',
+                JS('({id:"tracks_inner",style:"position:absolute;top:32px;left:0;width:100%;height:calc(100% - 32px);"})')
+            )
+        )
+        #tracks.appendContent(
+            createElement(
+                'div',
+                JS('({id:"tracks_ctrl",style:"position:absolute;top:0;left:0;width:100%;height:32px;border-bottom:1px solid gray;"})')
+            )
+        )
+        data_4_white = JS('({style:"padding-top:3px;"})')
+        data_4_blue  = JS('({style:"padding-top:3px;background-color:#aaf"})')
+        for i = 0; i < tracks.length; i++ {
+            if i & 1
+                #tracks_inner.appendContent(createElement('div', data_4_blue,  tracks[i].name))
+            else
+                #tracks_inner.appendContent(createElement('div', data_4_white, tracks[i].name))
+        }
+        data_4_white = data_4_blue = null
+        #tracks_ctrl.setContent('<img src="//icons.iconarchive.com/icons/hopstarter/'+
+        'soft-scraps/32/Document-Text-icon.png" class="darken-on-hover">')
+    }
+}
+
+menu('main')
