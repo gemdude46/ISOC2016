@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Driving Emulator</title>
+        <script src="//gemdude46.github.io/libs/w3+.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.min.js"></script>
+        <script src="//gemdude46.github.io/libs/X3.js"></script>
+        <script>
+            var noHTML5 = '<h1>HTML5 is required to view this content.</h1> <p>Wait, how did you even get here without a modern browser?</p>';
+            var display, scene;
+            window.onload = function(){
+                if(!(window.PLUS&&window.THREE)) return setTimeout(onload, 100);
+                X3.useNamespaceX3();
+                display = createDisplay([innerWidth, innerHeight], document.body, noHTML5);
+                scene = display.scene;
+            };
+        </script>
+        <style>
+        html,body{margin:0;overflow:hidden;}canvas{width:100%;height:100%;}
+        </style>
+    </head>
+    <body>
+    </body>
+</html>

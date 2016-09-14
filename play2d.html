@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Driving Emulator</title>
+        <script src="//gemdude46.github.io/libs/Canvas++.js"></script>
+        <script src="//gemdude46.github.io/libs/Interact.js"></script>
+        <script src="//gemdude46.github.io/libs/+.js"></script>
+        <script>
+            var c;
+            
+            var editing, edt_speed = 5, selected = 0;
+            
+            var debugging;
+            
+            var fps = 0, fpss = [], last_time = 0, frame = 0;
+            
+            var textures = {};
+            
+            var player = {}, map;
+            
+            var notifications = [];
+            function Ntification(text, color, size, font) {
+                this.text = text;
+                this.color = color || 'white';
+                this.font = font || 'Arial';
+                this.size = size || 15;
+                this.created = frame;
+                this.render = function(y) {
+                    c.drawText([c.width/2, y, 'center'], this.text, this.size + 'px ' + this.font, this.color);
+                }
+            }
+            function notify(a, b, c, d) {
+                notifications.push(new Ntification(a, b, c, d));
+            }
+            
+            function save() {
+                if (editing || confirm('You are not in editing mode.\nSave map?')) {
+                    var tracks = JSON.parse(localStorage.getItem('tracks')).filter(function(x){return !!x.name&&x.name!=location.arguments.t;})
+                    tracks.push(map);
+                    localStorage.setItem('tracks', JSON.stringify(tracks));
+                }
+            }
+            
+            window.requestAnimFrame = (function() {
+              return  window.requestAnimationFrame       ||
+                      window.webkitRequestAnimationFrame ||
+                      window.mozRequestAnimationFrame    ||
+                      function(callback) {
+                        window.setTimeout(callback, 16);
+                      };
+            })();
+            
+            onload = function() {
+                
+                objArr = ['tarmac', 'building_1'];
+                objArr.forEach(function(t){
+                    textures[t] = createElement('IMG', {src:'textures/'+t+'.png'}, null, [['load', function(){
+                        objSize[t] = [textures[t].naturalWidth, textures[t].naturalHeight];
+                        objLoadedCount++;
+                    }]]);
+                });
+                
+                editing   = location.arguments.e == 'y';
+                debugging = location.arguments.d == 'y';
+                
+                map = JSON.parse(localStorage.getItem('tracks')).filter(function(x){return x.name==location.arguments.t;})[0];
+                
+                player.x = map.start.x;
+                player.y = map.start.y;
+                
+                c = CreateCanvasObject('c');
+                (function f() {
+                    
+                    if (objLoadedCount != objArr.length)
+                        return setTimeout(f, 512);
+                    
+                    frame++;
+                    
+                    requestAnimFrame(f);
+                    
+                    var now = window.performance?performance.now():Date.now();
+                    fpss.push(1000 / (now - last_time));
+                    last_time = now;
+                    
+                    Mouse.worldX = Mouse.x + player.x - body.offsetWidth  /2;
+                    Mouse.worldY = Mouse.y + player.y - body.offsetHeight /2;
+                    
+                    if (editing) {
+                        if (isDown('up'))    player.y-=edt_speed;
+                        if (isDown('down'))  player.y+=edt_speed;
+                        if (isDown('left'))  player.x-=edt_speed;
+                        if (isDown('right')) player.x+=edt_speed;
+                        
+                        if (Mouse.rmbdown) objsAt(Mouse.worldX, Mouse.worldY).forEach(delObj);
+                        
+                        Mouse.worldXr = Math.floor(Mouse.worldX / 64) * 64;
+                        Mouse.worldYr = Math.floor(Mouse.worldY / 64) * 64;
+                        
+                        if (Mouse.down && objsAt(Mouse.worldX, Mouse.worldY).length == 0) {
+                            map.obj.push({
+                                x: Mouse.worldXr,
+                                y: Mouse.worldYr,
+                                what: objTypeSelect
+                            });
+                        }
+                    }
+                    
+                    c.width  = c.e.width  = body.offsetWidth;
+                    c.height = c.e.height = body.offsetHeight;
+                    
+                    c.fill('black');
+                    map.obj.forEach(function(o){
+                        c.blit([o.x - player.x + body.offsetWidth /2, o.y - player.y + body.offsetHeight /2], textures[o.what]);
+                    });
+                    
+                    var notY = c.height / 5;
+                    for (var i = notifications.length-1; i >= 0; i--) {
+                        notifications[i].render(notY);
+                        notY -= notifications[i].size;
+                        
+                        if (frame - notifications[i].created > 100 || notY < -2*notifications[i].size) notifications.splice(i, 1);
+                    }
+                    
+                    if (debugging) {
+                        c.drawText([0,10, 'left'], ('FPS: '+fps).substring(0, 10), '10px monospace', 'white');
+                    }
+                })();
+                
+                onKeyDown('lbracket', function(){
+                    objTypeSelect = objArr[objArr.indexOf(objTypeSelect)-1] || objArr[objArr.length-1];
+                    notify('Selected: '+objTypeSelect);
+                });
+                onKeyDown('rbracket', function(){
+                    objTypeSelect = objArr[objArr.indexOf(objTypeSelect)+1] || objArr[0];
+                    notify('Selected: '+objTypeSelect);
+                });
+            }
+            
+            setInterval(function() {
+                var t = 0;
+                for (var i = 0; i < fpss.length; i++) t += fpss[i];
+                fps = t / fpss.length;
+                fpss = [];
+            }, 999);
+        </script>
+        <script>
+            var objArr, objSize = {}, objLoadedCount = 0, objTypeSelect = 'building_1';
+            
+            function objsAt(x, y) {
+                var a = [];
+                map.obj.forEach(function(o){
+                    if (x > o.x && y > o.y && x < o.x + objSize[o.what][0] && y < o.y + objSize[o.what][1]) a.push(o);
+                });
+                return a;
+            }
+            
+            function delObj(o) {
+                map.obj.splice(map.obj.indexOf(o), 1);
+            }
+        </script>
+        <style>
+            html, body, #c {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+            }
+        </style>
+    </head>
+    <body oncontextmenu="return false;">
+        <canvas id=c>
+    </body>
+</html>

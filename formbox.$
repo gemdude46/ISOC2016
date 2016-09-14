@@ -1,0 +1,58 @@
+#include <dom>
+
+GLOBALS.next_fbi = 0
+
+def formbox(form, width, i, h, fb, ii, resp) {
+    width = width || 500
+    h = ''
+    ii = 0
+    fbi = GLOBALS.next_fbi;
+    GLOBALS.next_fbi = fbi + 1
+    for i = 0; i < form.length; i++ {
+        if form[i] == '\n'
+            h += '<br>'
+        else if form[i] == '[' {
+            j = i
+            while form[j] != ']' j++
+            inp = form.substring(i+1,j)
+            if inp == '_' {
+                h += '<input type=text id=fb_'+fbi+'_'+ii+'>'
+                ii++
+            } else if inp == '=' {
+                h += '<textarea style="resize:none;overflow:auto;width:66%;height:10em;" id=fb_'+fbi+'_'+ii+'></textarea>'
+                ii++
+            } else
+                h += '<button onclick="$GLOBALS.form_submit_'+fbi+'=\''+inp+'\'">'+inp+'</button>'
+            i = j
+        }
+        else h += form[i]
+    }
+    
+    fb = JS('document.createElement("DIV")')
+    fb.innerHTML = h
+    fb.id = 'form_fb_'+fbi
+    fb.style.position = 'absolute'
+    fb.style.top = '10em'
+    fb.style.left = 'calc(50vw - '+(width/2)+'px)'
+    fb.style.width = width+'px'
+    fb.style['text-align'] = 'center'
+    fb.style['background-color'] = 'white'
+    fb.style['box-shadow'] = '6px 6px 6px #ccc'
+    fb.style.border = '1px solid #667'
+    
+    body.appendChild(fb)
+    
+    resp = JS('Object()')
+    
+    while !(resp.button = GLOBALS['form_submit_'+fbi]) yield
+    
+    for i = 0; i < ii; i++ {
+        resp[i] = getElementById('fb_'+fbi+'_'+i).value
+    }
+    
+    resp.length = ii
+    
+    body.removeChild(getElementById('form_fb_'+fbi))
+    
+    return resp
+}
